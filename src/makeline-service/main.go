@@ -130,7 +130,7 @@ func updateOrder(c *gin.Context) {
 		return
 	}
 
-	// unmarsal the order from the request body
+	// unmarshal the order from the request body
 	var order Order
 	if err := c.BindJSON(&order); err != nil {
 		log.Printf("Failed to unmarshal order: %s", err)
@@ -170,7 +170,7 @@ func getEnvVar(varName string, fallbackVarNames ...string) string {
 	if value == "" {
 		for _, fallbackVarName := range fallbackVarNames {
 			value = os.Getenv(fallbackVarName)
-			if value == "" {
+			if value != "" {
 				break
 			}
 		}
@@ -188,6 +188,7 @@ func getEnvVar(varName string, fallbackVarNames ...string) string {
 // Initializes the database based on the API type
 func initDatabase(apiType string) (*OrderService, error) {
 	dbName := getEnvVar("ORDER_DB_NAME")
+	useWorkloadIdentityAuth := os.Getenv("USE_WORKLOAD_IDENTITY_AUTH") == "true"
 
 	switch apiType {
 	case AZURE_COSMOS_DB_SQL_API:
@@ -196,13 +197,7 @@ func initDatabase(apiType string) (*OrderService, error) {
 		dbPartitionKey := getEnvVar("ORDER_DB_PARTITION_KEY")
 		dbPartitionValue := getEnvVar("ORDER_DB_PARTITION_VALUE")
 
-		// check if USE_WORKLOAD_IDENTITY_AUTH is set
-		useWorkloadIdentityAuth := os.Getenv("USE_WORKLOAD_IDENTITY_AUTH")
-		if useWorkloadIdentityAuth == "" {
-			useWorkloadIdentityAuth = "false"
-		}
-
-		if useWorkloadIdentityAuth == "true" {
+		if useWorkloadIdentityAuth {
 			cosmosRepo, err := NewCosmosDBOrderRepoWithManagedIdentity(dbURI, dbName, containerName, PartitionKey{dbPartitionKey, dbPartitionValue})
 			if err != nil {
 				return nil, err
@@ -219,13 +214,7 @@ func initDatabase(apiType string) (*OrderService, error) {
 	default:
 		collectionName := getEnvVar("ORDER_DB_COLLECTION_NAME")
 
-		// check if USE_WORKLOAD_IDENTITY_AUTH is set
-		useWorkloadIdentityAuth := os.Getenv("USE_WORKLOAD_IDENTITY_AUTH")
-		if useWorkloadIdentityAuth == "" {
-			useWorkloadIdentityAuth = "false"
-		}
-
-		if useWorkloadIdentityAuth == "true" {
+		if useWorkloadIdentityAuth {
 			log.Printf("Authenticating with Workload Identity")
 			dbListConnStringsURL := getEnvVar("ORDER_DB_LIST_CONNECTION_STRING_URL")
 			mongoRepo, err := NewMongoDBOrderRepoWithManagedIdentity(dbListConnStringsURL, dbName, collectionName)

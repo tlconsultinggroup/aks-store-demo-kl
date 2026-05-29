@@ -99,7 +99,7 @@ func getOrdersFromQueue() ([]Order, error) {
 
 		// Get queue username from environment variable
 		orderQueueUsername := os.Getenv("ORDER_QUEUE_USERNAME")
-		if orderQueueName == "" {
+		if orderQueueUsername == "" {
 			log.Printf("ORDER_QUEUE_USERNAME is not set")
 			return nil, errors.New("ORDER_QUEUE_USERNAME is not set")
 		}
@@ -148,8 +148,8 @@ func getOrdersFromQueue() ([]Order, error) {
 				// receive next message
 				msg, err := receiver.Receive(ctx, nil)
 				if err != nil {
-					if err.Error() == "context deadline exceeded" {
-						log.Printf("no more orders for you: %v", err.Error())
+					if errors.Is(err, context.DeadlineExceeded) {
+						log.Printf("no more orders in queue")
 						break
 					} else {
 						return nil, err

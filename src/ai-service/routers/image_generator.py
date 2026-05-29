@@ -43,7 +43,7 @@ def _handle_azure_openai(user_prompt, use_azure_ad):
         )
 
     model_deployment_name = os.environ.get("AZURE_OPENAI_DALLE_DEPLOYMENT_NAME")
-    if not os.environ.get("AZURE_OPENAI_DALLE_DEPLOYMENT_NAME"):
+    if not model_deployment_name:
         raise ValueError("AZURE_OPENAI_DALLE_DEPLOYMENT_NAME must be provided")
 
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION")
